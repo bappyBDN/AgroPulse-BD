@@ -1,0 +1,40 @@
+name: Daily AgroPulse Data Update
+
+on:
+  schedule:
+    - cron: '0 0 * * *' # প্রতিদিন বাংলাদেশ সময় ভোর ৬টায় রান হবে
+  workflow_dispatch: # এটি থাকলে আপনি নিজে ক্লিক করে যেকোনো সময় রান করতে পারবেন
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Create ee-key.json from secret
+        run: echo '${{ secrets.EE_JSON_KEY }}' > ee-key.json
+
+      - name: Run daily update script
+        run: python daily_updater.py
+
+      - name: Run sync script
+        run: python sync_data.py
+
+      - name: Commit and Push changes
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add *.csv
+          git commit -m "Auto-update: $(date +'%Y-%m-%d')" || exit 0
+          git push
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
