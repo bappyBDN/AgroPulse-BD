@@ -45,7 +45,7 @@ The interface features a dual-pane system for actionable insights:
     * 🟡 **Yellow:** Weak/Harvested
     * 🔴 **Red:** Water/Bare land
 
-![AI Advisor and NDVI Map](Images/llmAndNDVIMao.jpg)
+![AI Advisor and NDVI Map](Images/llmAndNDVIMao.png)
 *Figure 3: Impact-based advisory and interactive geospatial NDVI visualization.*
 
 ---
