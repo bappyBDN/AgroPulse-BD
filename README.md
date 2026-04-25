@@ -11,7 +11,7 @@ The system is built on a decoupled architecture to ensure scalability and effici
 ### 🔄 Automated Data Ingestion
 A key highlight of the system is the **Daily Data Pipeline** powered by GitHub Actions. As shown in the workflow logs below, the system automatically fetches multi-source data (Sentinel-1 SAR, Sentinel-2 Optical, and Landsat) every morning. This ensures the model always operates on the most recent environmental telemetry without manual intervention.
 
-![GitHub Actions Automation](gitActions.png)
+![GitHub Actions Automation](Images/gitActions.png)
 *Figure 1: GitHub Actions executing the daily scheduled data fetch and synchronization pipeline.*
 
 ---
@@ -34,7 +34,7 @@ The frontend is built with **Streamlit**, designed to make complex satellite and
 ### 📊 Hydrological & Rainfall Analytics
 The dashboard provides a deep dive into the 1-month water level trends against a specific **Danger Threshold (7.5m)**. This visual aid allows users to see the trajectory of rising waters relative to historical norms.
 
-![Hydrological Analytics](hydrologyleveland_graph.png)
+![Hydrological Analytics](Images/hydrologyleveland_graph.png)
 *Figure 2: Real-time water level trends and historical rainfall data table.*
 
 ### 🌾 AI Advisor & NDVI Spatial Mapping
@@ -45,7 +45,7 @@ The interface features a dual-pane system for actionable insights:
     * 🟡 **Yellow:** Weak/Harvested
     * 🔴 **Red:** Water/Bare land
 
-![AI Advisor and NDVI Map](llmAndNDVIMao.jpg)
+![AI Advisor and NDVI Map](Images/llmAndNDVIMao.jpg)
 *Figure 3: Impact-based advisory and interactive geospatial NDVI visualization.*
 
 ---
