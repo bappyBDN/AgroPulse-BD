@@ -4,46 +4,49 @@ AgroPulse-BD is an AI-powered environmental decision support system specifically
 
 ---
 
-## 🏗️ System Architecture
+## 🏗️ System Architecture & Automation
 
-The system is built on a decoupled architecture to ensure scalability and efficient processing of heavy geospatial datasets.
+The system is built on a decoupled architecture to ensure scalability and efficient processing of heavy geospatial datasets. 
 
-1. **Data Ingestion Layer:** Automated fetching of Sentinel-1 (SAR), Sentinel-2 (Optical), and Landsat data via GitHub Actions and cloud APIs.
-2. **Backend (FastAPI):** The core engine that handles pre-processing, feature engineering, and model inference.
-3. **Model Layer (Bi-LSTM):** A Bidirectional Long Short-Term Memory network trained on 15 years of hydrological and meteorological data to predict water level trends.
-4. **Intelligence Layer (Gemini AI):** Utilizes RAG (Retrieval-Augmented Generation) to translate numerical risk probabilities into practical, human-readable agricultural advice.
-5. **Presentation Layer (Streamlit):** An interactive dashboard for visualization and data exploration.
+### 🔄 Automated Data Ingestion
+A key highlight of the system is the **Daily Data Pipeline** powered by GitHub Actions. As shown in the workflow logs below, the system automatically fetches multi-source data (Sentinel-1 SAR, Sentinel-2 Optical, and Landsat) every morning. This ensures the model always operates on the most recent environmental telemetry without manual intervention.
+
+![GitHub Actions Automation](gitActions.png)
+*Figure 1: GitHub Actions executing the daily scheduled data fetch and synchronization pipeline.*
 
 ---
 
 ## 🛰️ How It Works (The Pipeline)
 
-### 1. Data Acquisition & Processing
-The system monitors environmental variables including precipitation, river discharge, and satellite-derived indices.
-* **SAR (Sentinel-1):** Essential for flood mapping as it penetrates cloud cover during the monsoon season.
-* **NDVI (Sentinel-2):** Calculated to monitor crop vigor and identify areas under stress before damage becomes irreversible.
+1.  **Data Acquisition & Processing:** The system monitors environmental variables including precipitation and river discharge, merging them with satellite-derived indices.
+    * **SAR (Sentinel-1):** Essential for flood mapping as it penetrates cloud cover during the monsoon season.
+    * **NDVI (Sentinel-2):** Calculated to monitor crop vigor and identify areas under stress.
 
-### 2. Predictive Modeling
-The **Bi-LSTM model** processes temporal sequences of weather data. Unlike standard LSTMs, the bidirectional approach allows the model to learn patterns from both past and future states in the time series, providing superior accuracy in detecting sudden flash flood onsets.
+2.  **Predictive Modeling:** The **Bi-LSTM model** processes temporal sequences of weather data. Unlike standard LSTMs, the bidirectional approach allows the model to learn patterns from both past and future states in the time series, providing superior accuracy in detecting sudden flash flood onsets.
 
-### 3. AI-Powered Advisory
-Once a risk is identified, the backend sends the technical data to **Google Gemini**. The LLM contextualizes the threat based on the current crop cycle and generates advice (e.g., *"High probability of flash flood in 48 hours; prioritize harvesting Boro rice in low-lying sectors"*).
+3.  **AI-Powered Advisory:** Once a risk is identified, the backend sends the technical data to **Google Gemini**. The LLM contextualizes the threat based on the current crop cycle and generates localized, human-readable advice in Bengali.
 
 ---
 
 ## 🖥️ Frontend: Interactive Dashboard
-The frontend is built with **Streamlit**, designed to make complex satellite data accessible to non-technical users.
+The frontend is built with **Streamlit**, designed to make complex satellite and hydrological data accessible to non-technical users.
 
-### How the Frontend Works:
-* **Reactive State Management:** Streamlit’s execution model allows the dashboard to update dynamically as users toggle between different indices (NDVI vs. SAR) or time ranges.
-* **Geospatial Visualization:** Integrated with `folium` to render interactive heatmaps and inundation zones for the Sunamganj region.
-* **Asynchronous API Calls:** The frontend communicates with the **FastAPI backend** using the `requests` library, ensuring that heavy model computations don't freeze the user interface.
+### 📊 Hydrological & Rainfall Analytics
+The dashboard provides a deep dive into the 1-month water level trends against a specific **Danger Threshold (7.5m)**. This visual aid allows users to see the trajectory of rising waters relative to historical norms.
 
-### Key Features:
-* **Real-time Flood Risk Map:** Visualizes current water extent and predicted inundation zones.
-* **Crop Health Analytics:** Provides time-series charts of NDVI values to track growth cycles.
-* **Impact-Based Advisory Panel:** Displays Gemini-generated alerts in a clear, actionable format.
-* **Historical Data Explorer:** Allows comparison of current seasonal trends against historical flood events.
+![Hydrological Analytics](hydrologyleveland_graph.png)
+*Figure 2: Real-time water level trends and historical rainfall data table.*
+
+### 🌾 AI Advisor & NDVI Spatial Mapping
+The interface features a dual-pane system for actionable insights:
+* **AI Flood Prediction:** Displays the risk level, date, and confidence score, followed by a localized advisory panel.
+* **NDVI Crop Health Map:** An interactive Leaflet/Folium map that renders vegetation indices:
+    * 🟢 **Green:** Healthy Crops
+    * 🟡 **Yellow:** Weak/Harvested
+    * 🔴 **Red:** Water/Bare land
+
+![AI Advisor and NDVI Map](llmAndNDVIMao.jpg)
+*Figure 3: Impact-based advisory and interactive geospatial NDVI visualization.*
 
 ---
 
