@@ -57,16 +57,17 @@ The interface features a dual-pane system for actionable insights:
 * FastAPI & Uvicorn
 * Streamlit
 * TensorFlow/PyTorch (for Bi-LSTM inference)
-
-### 1. Clone the Repository
-```bash
-git clone [https://github.com/bappyBDN/AgroPulse-BD.git](https://github.com/bappyBDN/AgroPulse-BD.git)
-cd AgroPulse-BD
 ## 🤝 Contributing
 Feel free to fork this repository, open issues, or submit pull requests to improve the bot's logic or add new features.
 
 ---
 **Developed with ❤️ by [Bappy Chandra Debnath]**
 
-📧 **Email:** [bappynath2001@gmail.com](mailto:bappynath2001@gmail.com)  
+📧 **Email:** [bappynath2001@gmail.com](mailto:bappynath2001@gmail.com)  and
 🌐 **Portfolio:** [bappybdn.github.io/portfolio](https://bappybdn.github.io/portfolio.html)
+
+### 1. Clone the Repository
+```bash
+git clone [https://github.com/bappyBDN/AgroPulse-BD.git](https://github.com/bappyBDN/AgroPulse-BD.git)
+cd AgroPulse-BD
+
