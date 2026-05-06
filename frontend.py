@@ -103,7 +103,7 @@ st.markdown("---")
 # ==========================================
 # --- Top Row Layout (Columns) ---
 # ==========================================
-# স্ক্রিনটিকে দুটি কলামে ভাগ করা হচ্ছে (বাম দিকে ৪০%, ডান দিকে ৬০%)
+
 col1, col2 = st.columns([4, 6], gap="large")
 
 # -----------------------------------
@@ -134,7 +134,7 @@ with col1:
                 else:
                     st.error(f"Error from API: {response.text}")
         except requests.exceptions.ConnectionError:
-            st.error("❌ Cannot connect to the Prediction API. Is FastAPI running?")
+            st.error(" Cannot connect to the Prediction API. Is FastAPI running?")
         except Exception as e:
             st.error(f"Error: {e}")
 
@@ -142,7 +142,7 @@ with col1:
         data = st.session_state.prediction_data
         risk_color = "green" if "Safe" in data['prediction'] else ("orange" if "At-Risk" in data['prediction'] else "red")
         
-        # একটি সুন্দর বক্সে রেজাল্ট দেখানো
+       
         st.markdown(f"""
         <div style="padding: 15px; border-radius: 10px; border: 2px solid {risk_color}; background-color: rgba(255,255,255,0.05);">
             <h4 style="margin-top:0;">Risk Level: <span style='color:{risk_color}'>{data['prediction']}</span></h4>
@@ -196,7 +196,7 @@ with col2:
 
                         st_folium(m, height=450, use_container_width=True)
                     else:
-                        st.error("❌ No clear satellite imagery available due to clouds.")
+                        st.error(" No clear satellite imagery available due to clouds.")
                 except Exception as e:
                     st.error(f"Map Error: {e}")
 
@@ -218,7 +218,7 @@ def load_historical_data():
 df_history = load_historical_data()
 
 if df_history is not None:
-    # নিচের সেকশনটিকেও দুটি সাব-কলামে ভাগ করছি (টেবিল বামে, গ্রাফ ডানে)
+   
     bottom_col1, bottom_col2 = st.columns([3, 7], gap="large")
     
     end_dt = pd.to_datetime(selected_date)
