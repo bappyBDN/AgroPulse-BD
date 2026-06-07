@@ -14,7 +14,9 @@ import plotly.express as px
 # ==========================================
 
 # Gemini Configuration
-genai.configure(api_key="AIzaSyAfTsPxgU09sntUK8viBBweiz6cwDewjDY")
+# Gemini Configuration (Secured)
+gemini_api_key = st.secrets["GEMINI_API_KEY"]
+genai.configure(api_key=gemini_api_key)
 model_gemini = genai.GenerativeModel('gemini-2.5-flash')
 
 # Earth Engine Authentication
@@ -95,8 +97,14 @@ if "show_ndvi_map" not in st.session_state:
     st.session_state.show_ndvi_map = False
 
 # Sidebar
+# Sidebar
 st.sidebar.header("Control Panel")
-selected_date = st.sidebar.date_input("Select Date for Analysis", datetime(2026, 3, 18))
+
+# আজকের তারিখ থেকে ১ দিন বিয়োগ করে গতকালের তারিখ বের করা
+yesterday = datetime.now() - timedelta(days=2)
+
+# ডিফল্ট ভ্যালু হিসেবে yesterday সেট করা হলো
+selected_date = st.sidebar.date_input("Select Date for Analysis", yesterday)
 
 st.markdown("---")
 
@@ -109,27 +117,33 @@ col1, col2 = st.columns([4, 6], gap="large")
 # -----------------------------------
 # Left Column: Section 1 (AI Prediction)
 # -----------------------------------
+# -----------------------------------
+# Left Column: Section 1 (AI Prediction)
+# -----------------------------------
 with col1:
     st.markdown("### 🤖 AI Flood Prediction")
     
-    if st.button("📊 Predict Risk & Get Advice", type="primary", use_container_width=True):
+    # বাটনটির নাম একটু পরিবর্তন করে দিলাম
+    if st.button("📊 Get 7-Day Forecast", type="primary", use_container_width=True):
         API_URL = "http://127.0.0.1:8000/predict_by_date"
         payload = {"date": str(selected_date)}
         
         try:
-            with st.spinner('🤖 AI is analyzing current conditions...'):
+            with st.spinner('Calculating Bi-LSTM sequence...'):
                 response = requests.post(API_URL, json=payload)
                 if response.status_code == 200:
                     result = response.json()
                     prediction = result['prediction']
                     score = result['confidence_score']
-                    ai_advice = get_ai_advice(prediction, score, selected_date)
+                    forecast_date = result['forecast_target_date']
                     
+                    # এখানে AI Advice সাথে সাথে কল না করে শুধু মডেলের ডেটা সেভ রাখছি
                     st.session_state.prediction_data = {
                         "date": selected_date,
+                        "forecast_date": forecast_date,
                         "prediction": prediction,
                         "score": score,
-                        "advice": ai_advice
+                        "advice": None # শুরুতে অ্যাডভাইস ফাঁকা থাকবে
                     }
                 else:
                     st.error(f"Error from API: {response.text}")
@@ -138,21 +152,36 @@ with col1:
         except Exception as e:
             st.error(f"Error: {e}")
 
+    # রেজাল্ট দেখানোর অংশ
     if st.session_state.prediction_data:
         data = st.session_state.prediction_data
-        risk_color = "green" if "Safe" in data['prediction'] else ("orange" if "At-Risk" in data['prediction'] else "red")
+        risk_color = "green" if "Safe" in data['prediction'] else ("orange" if "Warning" in data['prediction'] else "red")
         
-        # একটি সুন্দর বক্সে রেজাল্ট দেখানো
+        # প্রেডিকশন বক্স
         st.markdown(f"""
         <div style="padding: 15px; border-radius: 10px; border: 2px solid {risk_color}; background-color: rgba(255,255,255,0.05);">
-            <h4 style="margin-top:0;">Risk Level: <span style='color:{risk_color}'>{data['prediction']}</span></h4>
-            <p style="margin-bottom:0;"><b>Date:</b> {data['date']} | <b>Confidence:</b> {data['score']}</p>
+            <h4 style="margin-top:0;">7-Day Forecast Risk: <span style='color:{risk_color}'>{data['prediction']}</span></h4>
+            <p style="margin-bottom:0;"><b>Target Date:</b> {data['forecast_date']} (Based on {data['date']}) | <b>Confidence:</b> {data['score']}</p>
         </div>
         <br>
         """, unsafe_allow_html=True)
         
-        st.info(data['advice'])
+        # --- NEW LOGIC: Tips & Details Button ---
+        # যদি অ্যাডভাইস আগে থেকে জেনারেট করা না থাকে, তবে বাটনটি দেখাবে
+        if data['advice'] is None:
+            if st.button("💡 Tips & Details (কৃষি পরামর্শ)", use_container_width=True):
+                with st.spinner('🤖 Gemini is writing advice in Bangla...'):
+                    # বাটন ক্লিক করার পরেই কেবল LLM-কে কল করা হবে
+                    ai_advice = get_ai_advice(data['prediction'], data['score'], data['forecast_date'])
+                    st.session_state.prediction_data['advice'] = ai_advice
+                    st.rerun() # UI আপডেট করার জন্য রিরান
+        else:
+            # একবার জেনারেট হয়ে গেলে বারবার টোকেন খরচ না করে সরাসরি মেসেজটা দেখাবে
+            st.info(data['advice'])
 
+# -----------------------------------
+# Right Column: Section 2 (NDVI Map)
+# -----------------------------------
 # -----------------------------------
 # Right Column: Section 2 (NDVI Map)
 # -----------------------------------
@@ -167,13 +196,14 @@ with col2:
         if not ee_initialized:
             st.warning("Earth Engine is not authenticated.")
         else:
-            with st.spinner("Processing satellite imagery..."):
+            with st.spinner("Processing satellite imagery (This may take a few seconds)..."):
                 try:
                     lat, lon = 25.0714, 91.3992
                     district = ee.FeatureCollection("FAO/GAUL/2015/level2").filter(ee.Filter.eq('ADM2_NAME', 'Sunamganj'))
 
+                    # পরিবর্তন ১: মেঘের কারণে ৭ দিনের বদলে ৩০ দিনের ইমেজ উইন্ডো নেওয়া হলো
                     end_date_obj = selected_date + timedelta(days=1)
-                    start_date_obj = selected_date - timedelta(days=7)
+                    start_date_obj = selected_date - timedelta(days=30) 
 
                     image = ee.ImageCollection("COPERNICUS/S2_SR_HARMONIZED") \
                         .filterBounds(district) \
@@ -182,21 +212,26 @@ with col2:
                         .median().clip(district)
 
                     if image.bandNames().size().getInfo() > 0:
-                        crop_mask = ee.Image("ESA/WorldCover/v100/2020").eq(40)
+                        # পরিবর্তন ২: WorldCover থেকে সঠিকভাবে 'Map' ব্যান্ড সিলেক্ট করা
+                        crop_mask = ee.Image("ESA/WorldCover/v100/2020").select('Map').eq(40)
                         masked_satellite = image.updateMask(crop_mask)
+                        
                         ndvi = masked_satellite.normalizedDifference(['B8', 'B4']).rename('NDVI')
 
                         m = folium.Map(location=[lat, lon], zoom_start=10)
+                        
                         vis_params = {'bands': ['B4', 'B3', 'B2'], 'min': 0, 'max': 3000, 'gamma': 1.4}
                         ndvi_vis = {'min': 0, 'max': 0.8, 'palette': ['#e74c3c', '#f1c40f', '#2ecc71']}
                         
-                        m.add_ee_layer(masked_satellite, vis_params, 'Crop Fields')
-                        m.add_ee_layer(ndvi, ndvi_vis, 'NDVI Health')
+                        # পরিবর্তন ৩: আনমাস্কড ম্যাপ ব্যাকগ্রাউন্ডে রেখে, তার ওপর NDVI লেয়ার বসানো
+                        m.add_ee_layer(image, vis_params, 'True Color (Background)')
+                        m.add_ee_layer(ndvi, ndvi_vis, 'NDVI Health (Croplands Only)')
+                        
                         m.add_child(folium.LayerControl())
 
                         st_folium(m, height=450, use_container_width=True)
                     else:
-                        st.error("❌ No clear satellite imagery available due to clouds.")
+                        st.error("❌ No clear satellite imagery available in the last 30 days due to heavy clouds.")
                 except Exception as e:
                     st.error(f"Map Error: {e}")
 
@@ -209,7 +244,10 @@ st.markdown("### 📈 Section 3: Hydrological & Rainfall Analytics")
 @st.cache_data
 def load_historical_data():
     try:
-        df = pd.read_csv('Agro_pulsedataset(verified).csv')
+        # আপনার গিটহাব রিপোজিটরির Raw URL টা এখানে বসাবেন
+        # উদাহরণ: 'https://raw.githubusercontent.com/YourUsername/YourRepoName/main/AgroPulse_Test_Dataset_Final.csv'
+        CSV_URL = 'https://raw.githubusercontent.com/bappyBDN/AgroPulse-BD/main/Agro_pulsedataset(verified).csv'
+        df = pd.read_csv(CSV_URL)
         df['Date'] = pd.to_datetime(df['Date'])
         return df
     except Exception as e:
