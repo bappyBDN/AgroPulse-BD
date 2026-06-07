@@ -12,23 +12,23 @@ import json
 # 1. Initialization & Setup
 # ==========================================
 PROJECT_ID = 'my-ai-agent-481120'
-JSON_KEY_PATH = 'ee-key.json'  # আপনার ডাউনলোড করা ফাইলের নাম
+JSON_KEY_PATH = 'ee-key.json' 
 
 try:
-    # JSON ফাইল থেকে ইমেইল পড়া
+   
     with open(JSON_KEY_PATH) as f:
         key_data = json.load(f)
         service_account_email = key_data['client_email']
 
-    # Service Account দিয়ে ব্রাউজার ছাড়াই লগইন করা
+    
     credentials = ee.ServiceAccountCredentials(service_account_email, JSON_KEY_PATH)
     ee.Initialize(credentials, project=PROJECT_ID)
     print("✅ Earth Engine securely authenticated in background!")
 except Exception as e:
-    print(f"❌ Authentication Failed: {e}")
-    exit() # লগইন ফেইল করলে স্ক্রিপ্ট এখানেই থেমে যাবে
+    print(f" Authentication Failed: {e}")
+    exit() 
 
-# যে ফাইলটিতে ডেটা আপডেট হবে
+
 CSV_FILE = 'AgroPulse_Test_Dataset_Final.csv'
 
 # ==========================================
@@ -47,10 +47,10 @@ def fetch_ffwc_water_level():
         
         if match:
             wl = float(match.group(1))
-            print(f"   ✅ Success! Found Surma Water Level: {wl} meters")
+            print(f"    Success! Found Surma Water Level: {wl} meters")
             return wl
         else:
-            print("   ❌ Could not extract the Sunamganj data.")
+            print("    Could not extract the Sunamganj data.")
     except Exception as e:
         print(f"   ❌ Connection Error: {e}")
     return np.nan
@@ -139,14 +139,14 @@ def fetch_satellite_data(target_date_str):
 # ==========================================
 
 def update_daily_data():
-    # 1. আজকের তারিখ নির্ণয়
+   
     # Note: Climate/Rainfall data usually has a 1-2 day lag. Fetching for yesterday is safer.
     target_date = datetime.now() - timedelta(days=1)
     target_date_str = target_date.strftime("%Y-%m-%d")
     
     print(f"\n🚀 Starting Daily AgroPulse Update for: {target_date_str}")
     
-    # 2. বিদ্যমান ডেটাসেট রিড করা
+    
     if not os.path.exists(CSV_FILE):
         print(f"❌ Error: The file {CSV_FILE} does not exist.")
         return
@@ -159,30 +159,30 @@ def update_daily_data():
         print(f"ℹ️ Data for {target_date_str} already exists in the dataset. Exiting.")
         return
 
-    # 3. সব এপিআই থেকে ডেটা কালেক্ট করা
+   
     ffwc_water = fetch_ffwc_water_level()
     climate = fetch_climate_data(target_date_str)
     rain = fetch_rainfall_data(target_date_str)
     satellite = fetch_satellite_data(target_date_str)
 
-    # 4. নতুন ডাটা রো (Row) তৈরি
+    
     new_data = {
         'Date': target_date_str,
-        'Temperature': climate.get('Temperature_C', np.nan),     # <-- Changed
+        'Temperature': climate.get('Temperature_C', np.nan),     
         'Soil_Moisture': climate.get('Soil_Moisture', np.nan),
         'Rain_Sunamganj_Center': rain.get('Rain_Sunamganj_Center', np.nan),
         'Rain_Meghalaya_Border': rain.get('Rain_Meghalaya_Border', np.nan),
-        'NDVI_Clean': satellite.get('Mean_NDVI', np.nan),        # <-- Changed
+        'NDVI_Clean': satellite.get('Mean_NDVI', np.nan),        
         'Radar_VV': satellite.get('Radar_VV', np.nan),
         'Daily_Water_Level': ffwc_water
     }
     
     new_df = pd.DataFrame([new_data])
     
-    # 5. মেইন ডেটাসেটের সাথে যুক্ত করা
+   
     df = pd.concat([df, new_df], ignore_index=True)
     
-    # 6. Null Values (ফাঁকা ঘর) ইন্টারপোলেট করা
+   
     print("⚙️ Filling null values using Interpolation...")
     df['Date'] = pd.to_datetime(df['Date'])
     df = df.sort_values('Date').set_index('Date')
@@ -202,17 +202,17 @@ def update_daily_data():
     print(df.tail(3))
 
 if __name__ == "__main__":
-    # ১. প্রথমে প্রতিদিনের নতুন ডেটা কালেক্ট করবে
+
     try:
         update_daily_data()
     except Exception as e:
         print(f"❌ Error during data update: {e}")
     
-    # ২. ডেটা কালেক্ট করা শেষ হলে বা স্কিপ হলেও, স্বয়ংক্রিয়ভাবে সিঙ্ক (Sync) করবে
+
     print("\n==================================================")
     print("🚀 Initiating Auto-Sync to Verified Database...")
     try:
-        # os.system ব্যবহার করা বেশি নিরাপদ, এটি সরাসরি ফাইলটিকে আলাদাভাবে রান করে
+
         exit_code = os.system('python sync_data.py')
         if exit_code == 0:
             print("✅ Auto-Sync Completed Successfully.")
